@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function webform_options_by_bundle_uninstall() {
+  variable_del('webform_options_by_bundle_enabled_bundles');
+}

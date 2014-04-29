@@ -1,0 +1,137 @@
+<?php
+
+/**
+ * This module provides select list options for Webform using entity bundles.
+ *
+ * @author Brian Altenhofel <brian.altenhofel@vmdoh.com>
+ */
+
+/**
+ * Implements hook_help().
+ */
+function webform_options_by_bundle_help($path, $args) {
+  switch ($path) {
+    case 'admin/help#webform_options_by_bundle':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Webform Options By Bundle module enables the
+        Webform module to dynamically generate select list options based on
+        the entity bundle. The options generated will be the entity labels,
+        such as the node title if using a content type.') . '</p>';
+      $output .= '<h3>' . t('Use Cases') . '</h3>';
+      $output .= '<p>' . t('A common use case for this module would be to
+        allow users who are contacting a business with multiple locations
+        to provide feedback specific to one location. Because this module
+        works with all entities and bundles, it does not matter if the
+        location is represented by a node, taxonomy term, or another
+        entity. By using this module to generate the select list options,
+        the site administrator does not have to take the extra step of
+        updating webform select list options if another location is added
+        later.') . '</p>';
+      $output .= '<h3>' . t('Warning') . '</h3>';
+      $output .= '<p>' . t('The options in the select list are the labels of
+        all entities that match that entity type and bundle. Therefore, it
+        would be very unwise to select a bundle that contains many entites
+        such as the "Node: Basic Page" bundle.') . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function webform_options_by_bundle_menu() {
+    $items = array();
+
+    $items['admin/config/content/webform-options-by-bundle'] = array(
+      'title' => 'Webform Options By Bundle settings',
+      'description' => 'Settings for Webform Options By Bundle',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('webform_options_by_bundle_settings'),
+      'access arguments' => array('administer site configuration'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+
+    return $items;
+}
+
+/**
+ * Implements hook_webform_select_options_info().
+ */
+function webform_options_by_bundle_webform_select_options_info() {
+  $items = array();
+
+  // Get enabled bundles.
+  $enabled = array_values(variable_get('webform_options_by_bundle_enabled_bundles', array()));
+
+  // Get all bundles for the site.
+  $bundles = field_info_bundles();
+
+  foreach ($bundles as $entity_type => $bundle_list) {
+    foreach ($bundle_list as $machine_name => $bundle) {
+      $key = $entity_type . '_' . $machine_name;
+      if (in_array($key, $enabled, TRUE)) {
+        $entity_info = entity_get_info($entity_type);
+        $items[$key] = array(
+          'title' => $entity_info['label'] . ': ' . $bundle['label'],
+          'options callback' => 'webform_options_by_bundle_get_titles',
+          'options arguments' => array($entity_type, $machine_name),
+        );
+      }
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Callback: Get bundle titles.
+ */
+function webform_options_by_bundle_get_titles($component, $flat, $arguments) {
+  $entity_type = $arguments[0];
+  $bundle = $arguments[1];
+  $options = array();
+  $entity_info = entity_get_info($entity_type);
+  $args = array(
+    ':bundle' => $bundle,
+  );
+  $results = db_query('SELECT ' . $entity_info['entity keys']['id'] . ', ' . $entity_info['entity keys']['label'] . ' FROM {'. $entity_info['base table'] . '} WHERE ' . $entity_info['entity keys']['bundle'] .' = :bundle ORDER BY ' . $entity_info['entity keys']['label'] . ' ASC', $args);
+  foreach ($results as $result) {
+    $options[$result->$entity_info['entity keys']['id']] = $result->$entity_info['entity keys']['label'];
+  }
+
+  return $options;
+}
+
+/**
+ * Settings form for Webform Options By Bundle.
+ */
+function webform_options_by_bundle_settings() {
+  $form['webform_options_by_bundle_enabled_bundles'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Enabled Bundles'),
+    '#description' => t('Select which bundles to enable for dynamically generated select options. It is strongly recommended to NOT select bundles that contain a large amount of entities (such as "Node: Basic Page").'),
+    '#options' => webform_options_by_bundle_get_bundles(),
+    '#default_value' => variable_get('webform_options_by_bundle_enabled_bundles', array()),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Get available bundles.
+ */
+function webform_options_by_bundle_get_bundles() {
+  $items = array();
+  // Get all bundles for the site.
+  $bundles = field_info_bundles();
+
+  foreach ($bundles as $entity_type => $bundle_list) {
+    foreach ($bundle_list as $machine_name => $bundle) {
+      $entity_info = entity_get_info($entity_type);
+      $items[$entity_type . '_' . $machine_name] = $entity_info['label'] . ': ' . $bundle['label'];
+    }
+  }
+
+  return $items;
+}
