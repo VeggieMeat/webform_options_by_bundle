@@ -6,6 +6,7 @@ Create options lists for Webform select lists dynamically generated from entity 
 Requirements
 ------------
 Drupal 7.x
+Webform 7.x-4.x
 
 Installation
 ------------
