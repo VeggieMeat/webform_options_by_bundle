@@ -103,7 +103,7 @@ function webform_options_by_bundle_get_titles($component, $flat, $arguments) {
     $entities = entity_load($entity_type, $ids);
     foreach ($entities as $entity) {
       // Only return the entities that the user has access to.
-      if ($entity_info['access callback']('view', $entity, $user, $entity_type)) {
+      if ($entity_info['access callback']('view', $entity, NULL, $entity_type)) {
         $options[$entity->$entity_info['entity keys']['id']] = $entity->$entity_info['entity keys']['label'];
       }
     }
