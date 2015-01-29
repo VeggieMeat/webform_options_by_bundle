@@ -10,7 +10,7 @@ Webform 7.x-4.x
 
 Installation
 ------------
-1. Copy the entire webform directory the Drupal sites/all/modules directory.
+1. Copy the entire webform\_options\_by\_bundle directory the Drupal sites/all/modules directory.
 
 2. Login as an administrator. Enable the module in the "Administer" -> "Modules"
 
